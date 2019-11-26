@@ -77,14 +77,16 @@ routes.put("/cart-items/:id", (req, res) => {
   const id = parseInt(req.params.id);
   // Create an item object from the JSON body of the request
   const updatedItem = req.body;
-  // Attach the item id to the item
-  updatedItem.id = id;
-  // Find the item Index by ID
-  const index = cartItems.findIndex(item => item.id === id);
-  // Replace the item at index
-  cartItems.splice(index, 1, updatedItem);
-  res.json(updatedItem);
-  // console.log("Updated item");
+
+  // Setup SQL query to update the item info specified by the id, including the addon to make it return what it added
+  const sql = "UPDATE shopping_cart set product=$1::TEXT, price=$2::REAL, quantity=$3::INT WHERE id=$4::INT RETURNING *;";
+  // Get the values to populate the database entry from the body of the request and the id from the URL
+  let params = [updatedItem.product, updatedItem.price, updatedItem.quantity, id];
+  // Send the request with the parameters
+  pool.query(sql, params).then(result => {
+    // Send the copied back resulting database entry
+    res.json(result.rows[0]);
+  });
 });
 
 // DELETE /cart-items/:id Endpoint
@@ -94,19 +96,21 @@ routes.put("/cart-items/:id", (req, res) => {
 routes.delete("/cart-items/:id", (req, res) => {
   // Get the id of the item from the request URL params
   const id = parseInt(req.params.id);
-  // Try to find the item by id
-  const index = cartItems.findIndex(item => item.id === id);
-  // If found...
-  if (index !== -1) {
-    // Remove the item from the cart
-    cartItems.splice(index, 1);
-    // Set and send response code 204. Send no content.
-    res.sendStatus(204);
-  } else {
-    // Otherwise, send a 404, item not found response
-    res.status(404);
-    res.send(`Item ID ${id} Not Found`);
-  }
+
+
+  // // Try to find the item by id
+  // const index = cartItems.findIndex(item => item.id === id);
+  // // If found...
+  // if (index !== -1) {
+  //   // Remove the item from the cart
+  //   cartItems.splice(index, 1);
+  //   // Set and send response code 204. Send no content.
+  //   res.sendStatus(204);
+  // } else {
+  //   // Otherwise, send a 404, item not found response
+  //   res.status(404);
+  //   res.send(`Item ID ${id} Not Found`);
+  // }
 });
 
 

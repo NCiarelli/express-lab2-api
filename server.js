@@ -9,7 +9,7 @@ app.use(cors());
 app.use(express.json());
 
 // Setup routes from the import
-app.use("/", routes);
+app.use(routes);
 
 // Starts the server on port=3000
 const port = 3000;
