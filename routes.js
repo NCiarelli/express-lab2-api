@@ -1,17 +1,9 @@
 // Import reuired modules from other files
 const express = require("express");
+const pool = require("./pg-connection-pool");
 
 // Setup a routing object for the server
 const routes = express.Router();
-
-// Setup hard-coded cart items
-let cartItems = [
-  { id: 1, product: "soap", price: 3.5, quantity: 6 },
-  { id: 2, product: "capacitor", price: 1.25, quantity: 10 },
-  { id: 3, product: "cable", price: 2.00, quantity: 3 },
-  { id: 4, product: "umbrella", price: 5.0, quantity: 1 }
-];
-let nextId = 5;
 
 // Quick response from server to show its alive and working
 // at http://localhost:3000/
@@ -24,7 +16,10 @@ routes.get("/", (req, res) => {
 // Response: a JSON array of all cart items
 // Response Code: 200 (OK)
 routes.get("/cart-items", (req, res) => {
-  res.json(cartItems);
+  const sql = "SELECT * FROM shopping_cart ORDER BY id";
+  pool.query(sql).then(result => {
+    res.json(result.rows);
+  });
 });
 
 // GET /cart-items/:id Endpoint
@@ -35,17 +30,21 @@ routes.get("/cart-items", (req, res) => {
 routes.get("/cart-items/:id", (req, res) => {
   // Get the ID of the item from the URL params
   const id = parseInt(req.params.id);
-  // console.log(id);
-  // Find the item with the id from the URL
-  const foundItem = cartItems.find(item => item.id === id);
-  if (foundItem) {
-    // If the item was found, return the item object
-    res.json(foundItem);
-  } else {
-    // If the id was not found among the itemCart, return a not found message.
-    res.status(404);
-    res.send("ID Not Found");
-  }
+
+  // Setup SQL query to request an item with the specified ID
+  const sql = "SELECT * FROM shopping_cart WHERE id = $1::INT;";
+  // Make the request with the specified 'id' as a parameter
+  pool.query(sql, [id]).then(result => {
+    // If the returned result has somthing in it...
+    if (result.rows.length !== 0) {
+      // return the (should be only) first row of result.
+      res.json(result.rows[0]);
+    } else {
+      // Otherwise return 'ID Not Found' with a status of 404
+      res.status(404);
+      res.send("ID Not Found");
+    }
+  });
 });
 
 // POST /cart-items Endpoint
@@ -55,16 +54,18 @@ routes.get("/cart-items/:id", (req, res) => {
 routes.post("/cart-items", (req, res) => {
   // Get the item info from the request body
   const item = req.body;
-  // Add an id to the item
-  item.id = nextId;
-  // Increment the nextId variable
-  nextId++;
-  // Add the item to the cartItems array
-  cartItems.push(item);
 
-  // Respond with the created item
-  res.status(201);
-  res.json(item);
+  // Setup SQL query to insert the flight info in the request to the database, 
+  // including the addon to make it return what it added
+  const sql = "INSERT INTO shopping_cart (product, price, quantity) VALUES ($1::TEXT,$2::REAL,$3::INT) RETURNING *;";
+  // Get the values to populate the database entry from the body of the request
+  let params = [item.product, item.price, item.quantity];
+  // Send the request with the parameters
+  pool.query(sql, params).then(result => {
+    // Send the copied back resulting database entry with a status code of 201 
+    res.status(201);
+    res.json(result.rows[0]);
+  });
 });
 
 // PUT /cart-items/:id Endpoint
