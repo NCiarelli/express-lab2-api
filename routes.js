@@ -101,7 +101,7 @@ routes.delete("/cart-items/:id", (req, res) => {
   // Setup SQL query to delete the item specified by the id
   const sql = "DELETE FROM shopping_cart WHERE id=$1::INT;";
   // Send the request with the parameters
-  pool.query(sql, id).then(() => {
+  pool.query(sql, [id]).then(() => {
     // On successul return, send status code 204 (No Content)
     res.sendStatus(204);
   });
