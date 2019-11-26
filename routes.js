@@ -78,7 +78,8 @@ routes.put("/cart-items/:id", (req, res) => {
   // Create an item object from the JSON body of the request
   const updatedItem = req.body;
 
-  // Setup SQL query to update the item info specified by the id, including the addon to make it return what it added
+  // Setup SQL query to update the item info specified by the id, 
+  // including the addon to make it return what it added
   const sql = "UPDATE shopping_cart set product=$1::TEXT, price=$2::REAL, quantity=$3::INT WHERE id=$4::INT RETURNING *;";
   // Get the values to populate the database entry from the body of the request and the id from the URL
   let params = [updatedItem.product, updatedItem.price, updatedItem.quantity, id];
@@ -97,20 +98,13 @@ routes.delete("/cart-items/:id", (req, res) => {
   // Get the id of the item from the request URL params
   const id = parseInt(req.params.id);
 
-
-  // // Try to find the item by id
-  // const index = cartItems.findIndex(item => item.id === id);
-  // // If found...
-  // if (index !== -1) {
-  //   // Remove the item from the cart
-  //   cartItems.splice(index, 1);
-  //   // Set and send response code 204. Send no content.
-  //   res.sendStatus(204);
-  // } else {
-  //   // Otherwise, send a 404, item not found response
-  //   res.status(404);
-  //   res.send(`Item ID ${id} Not Found`);
-  // }
+  // Setup SQL query to delete the item specified by the id
+  const sql = "DELETE FROM shopping_cart WHERE id=$1::INT;";
+  // Send the request with the parameters
+  pool.query(sql, id).then(() => {
+    // On successul return, send status code 204 (No Content)
+    res.sendStatus(204);
+  });
 });
 
 
