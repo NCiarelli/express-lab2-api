@@ -54,6 +54,7 @@ routes.get("/cart-items/:id", (req, res) => {
 routes.post("/cart-items", (req, res) => {
   // Get the item info from the request body
   const item = req.body;
+  // console.log(item);
 
   // Setup SQL query to insert the flight info in the request to the database, 
   // including the addon to make it return what it added
@@ -77,7 +78,7 @@ routes.put("/cart-items/:id", (req, res) => {
   const id = parseInt(req.params.id);
   // Create an item object from the JSON body of the request
   const updatedItem = req.body;
-
+  // console.log(updatedItem);
   // Setup SQL query to update the item info specified by the id, 
   // including the addon to make it return what it added
   const sql = "UPDATE shopping_cart set product=$1::TEXT, price=$2::REAL, quantity=$3::INT WHERE id=$4::INT RETURNING *;";
